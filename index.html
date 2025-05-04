@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Heatwaves and Older Adults - Bivariate Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.0/dist/leaflet.css"/>
+    <link href="https://fonts.googleapis.com/css?family=Titillium+Web" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <style>
+        html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; }
+
+                #state-select {
+            position: absolute;
+            top: 115px;
+            right: 10px;
+            z-index: 1000;
+            font-size: 14px;
+            padding: 5px;
+        }
+
+        /* Media queries go outside the main rule */
+        @media (max-width: 768px) {
+            #state-select {
+                font-size: 13px;
+                padding: 4px;
+                top: 70px;
+                right: 8px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #state-select {
+                font-size: 12px;
+                padding: 3px;
+                top: 65px;
+                right: 6px;
+            }
+        }
+
+
+        .legend {
+    font-family: 'Titillium Web', sans-serif;
+    background: white;
+    padding: 10px;
+    line-height: 1.2;
+    border-radius: 5px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2);
+    width: fit-content;
+    max-width: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 13px;
+}
+
+/* Medium screens (e.g., tablets) */
+@media (max-width: 768px) {
+    .legend {
+        font-size: 12px;
+        padding: 8px;
+        max-width: 180px;
+    }
+}
+
+/* Small screens (e.g., phones) */
+@media (max-width: 480px) {
+    .legend {
+        font-size: 11px;
+        padding: 6px;
+        max-width: 160px;
+    }
+}
+
+.bivariate-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 20px);
+    grid-template-rows: repeat(3, 20px);
+    border: 1px solid #999;
+}
+
+.bivariate-grid div {
+    width: 20px;
+    height: 20px;
+}
+
+.legend-labels-horizontal {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    width: 60px;
+    margin: 2px auto 4px auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .bivariate-grid {
+        grid-template-columns: repeat(3, 16px);
+        grid-template-rows: repeat(3, 16px);
+    }
+
+    .bivariate-grid div {
+        width: 16px;
+        height: 16px;
+    }
+
+    .legend-labels-horizontal {
+        font-size: 10px;
+        width: 50px;
+    }
+}
+
+@media (max-width: 480px) {
+    .bivariate-grid {
+        grid-template-columns: repeat(3, 14px);
+        grid-template-rows: repeat(3, 14px);
+    }
+
+    .bivariate-grid div {
+        width: 14px;
+        height: 14px;
+    }
+
+    .legend-labels-horizontal {
+        font-size: 9px;
+        width: 45px;
+    }
+}
+
+                    #map-title {
+                position: absolute;
+                top: 10px;
+                left: 50px;
+                background: white;
+                padding: 10px 15px;
+                font-size: 20px; /* default for desktop */
+                font-family: 'Titillium Web', sans-serif;
+                font-weight: bold;
+                border-radius: 5px;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                z-index: 1000;
+                max-width: 90%;
+            }
+
+            /* Medium screens (tablets) */
+            @media (max-width: 768px) {
+                #map-title {
+                    font-size: 16px;
+                    top: 8px;
+                    left: 8px;
+                }
+            }
+
+            /* Small screens (phones) */
+            @media (max-width: 480px) {
+                #map-title {
+                    font-size: 14px;
+                    padding: 8px 12px;
+                    top: 6px;
+                    left: 6px;
+                }
+            }
+                #map-description {
+            position: absolute;
+            bottom: 30px;
+            left: 10px;
+            max-width: 350px;
+            background: white;
+            padding: 10px;
+            font-size: 13px;
+            font-family: 'Titillium Web', sans-serif;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        /* Responsive tweak for smaller screens */
+        @media (max-width: 576px) {
+            #map-description {
+                max-width: 90vw;
+                font-size: 12px;
+                left: 5px;
+                right: 5px;
+            }
+        }
+
+
+    </style>
+    <script src="https://unpkg.com/leaflet@1.7.0/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-ajax/2.1.0/leaflet.ajax.min.js"></script>
+</head>
+<body>
+
+    <div id="map-title">Heatwaves and Vulnerability: Mapping Older Adult Exposure Across the Contiguous United States</div>
+
+    <div id="map-description">
+        <strong>About This Map</strong><br>
+        This map visualizes the intersection of heatwave exposure and older adult populations across the contiguous United States. Drawing inspiration from the article 
+        <a href="https://www.bu.edu/articles/2024/extreme-heat-will-put-more-older-adults-in-danger/" target="_blank">
+          “Extreme Heat Will Put More Older Adults in Danger”
+        </a> by Boston University, it highlights regions where older adults—who are especially vulnerable to heat—face elevated heat risk.
+      
+        <br><br>
+        <img src="assets/Brink_Logo.png" 
+             alt="Brink logo related to article on heat and older adults" 
+             style="width:100%; max-width:320px; border-radius:6px; margin:8px 0; display:block;">
+        <em style="font-size:11px; display:block; margin-bottom:8px;">
+          Image from Boston University article
+        </em>
+      
+        County-level temperature data from 2011 to 2024 was used to detect 2-day heatwave events using a 45-day moving window based on the 90th percentile of daily average temperature. Demographic data on adults aged 65 and older is sourced from the 2021 American Community Survey 5-Year Estimates.
+      
+        <br><br>
+        By overlaying these two indicators in a bivariate format, this map helps identify counties where older populations are likely to be most at risk, supporting discussions around heat resilience, public health planning, and climate adaptation.
+      </div>
+      
+      
+      
+      
+
+<select id="state-select">
+  <option value="">Zoom to State</option>
+  <!-- 48 contiguous states -->
+  <option value="AL">Alabama</option>
+  <option value="AZ">Arizona</option>
+  <option value="AR">Arkansas</option>
+  <option value="CA">California</option>
+  <option value="CO">Colorado</option>
+  <option value="CT">Connecticut</option>
+  <option value="DE">Delaware</option>
+  <option value="FL">Florida</option>
+  <option value="GA">Georgia</option>
+  <option value="ID">Idaho</option>
+  <option value="IL">Illinois</option>
+  <option value="IN">Indiana</option>
+  <option value="IA">Iowa</option>
+  <option value="KS">Kansas</option>
+  <option value="KY">Kentucky</option>
+  <option value="LA">Louisiana</option>
+  <option value="ME">Maine</option>
+  <option value="MD">Maryland</option>
+  <option value="MA">Massachusetts</option>
+  <option value="MI">Michigan</option>
+  <option value="MN">Minnesota</option>
+  <option value="MS">Mississippi</option>
+  <option value="MO">Missouri</option>
+  <option value="MT">Montana</option>
+  <option value="NE">Nebraska</option>
+  <option value="NV">Nevada</option>
+  <option value="NH">New Hampshire</option>
+  <option value="NJ">New Jersey</option>
+  <option value="NM">New Mexico</option>
+  <option value="NY">New York</option>
+  <option value="NC">North Carolina</option>
+  <option value="ND">North Dakota</option>
+  <option value="OH">Ohio</option>
+  <option value="OK">Oklahoma</option>
+  <option value="OR">Oregon</option>
+  <option value="PA">Pennsylvania</option>
+  <option value="RI">Rhode Island</option>
+  <option value="SC">South Carolina</option>
+  <option value="SD">South Dakota</option>
+  <option value="TN">Tennessee</option>
+  <option value="TX">Texas</option>
+  <option value="UT">Utah</option>
+  <option value="VT">Vermont</option>
+  <option value="VA">Virginia</option>
+  <option value="WA">Washington</option>
+  <option value="WV">West Virginia</option>
+  <option value="WI">Wisconsin</option>
+  <option value="WY">Wyoming</option>
+</select>
+
+<div id="map"></div>
+<div class="container-fluid">
+    <div class="row">
+      <div class="col-md-4 col-sm-6 col-12">
+        <div id="map-description" class="p-3 mt-2 bg-white rounded shadow-sm">
+          <p class="mb-0">
+            This interactive map displays bivariate patterns between heatwave frequency and the percentage of older adults (65+) across the contiguous United States.
+            Heat data span from 2011 to 2024 and were processed using a 45-day moving window to identify heatwave events.
+            Heatwaves are defined as periods with at least two consecutive days where average daily temperatures exceed the 90th percentile for that location.
+            Population age data is sourced from the 2021 American Community Survey (ACS) 5-Year Estimates.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+<script>
+const map = L.map('map').setView([39.8283, -98.5795], 5);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '&copy; Esri'
+}).addTo(map);
+
+// Color bins
+const bivariateColors = {
+    '1-1': '#ffffcc', '1-2': '#ffeda0', '1-3': '#fed976',
+    '2-1': '#feb24c', '2-2': '#fd8d3c', '2-3': '#fc4e2a',
+    '3-1': '#e31a1c', '3-2': '#bd0026', '3-3': '#800026'
+};
+
+const heatBreaks = [180, 204];
+const ageBreaks = [17.243, 20.53];
+
+function getBin(val, breaks) {
+    if (val <= breaks[0]) return 1;
+    if (val <= breaks[1]) return 2;
+    return 3;
+}
+
+// Styles
+function styleBivariate(f) {
+    const h = f.properties.event_days;
+    const a = f.properties.percent_65plus;
+    if (h == null || a == null) return { fillOpacity: 0 };
+    const key = getBin(h, heatBreaks) + "-" + getBin(a, ageBreaks);
+    return { fillColor: bivariateColors[key], color: '#555', weight: 1, fillOpacity: 0.8 };
+}
+function styleHeatwave(f) {
+    const val = f.properties.event_days;
+    const color = val > 300 ? '#99000d' :
+                  val > 250 ? '#cb181d' :
+                  val > 200 ? '#ef3b2c' :
+                  val > 175 ? '#fb6a4a' :
+                  val > 150 ? '#fc9272' :
+                  val > 125 ? '#fcbba1' : '#fff5f0';
+    return { fillColor: color, color: '#555', weight: 1, fillOpacity: 0.7 };
+}
+function styleAge(f) {
+    const val = f.properties.percent_65plus;
+    const color = val > 35 ? '#4b2900' :
+                  val > 30 ? '#6e3c0a' :
+                  val > 25 ? '#8c4c1a' :
+                  val > 20 ? '#ab6329' :
+                  val > 15 ? '#c97f46' :
+                  val > 10 ? '#d9a679' : '#f7f4f0';
+    return { fillColor: color, color: '#555', weight: 1, fillOpacity: 0.7 };
+}
+
+function onEach(feature, layer) {
+    const props = feature.properties;
+    const name = props.Geo_QName || "Unknown County";
+
+    // Set tooltip content
+    const tooltipContent = `
+        <strong>${name}</strong><br>
+        Heatwave Days: ${props.event_days}<br>
+        % of Population Age 65+: ${props.percent_65plus.toFixed(1)}%
+    `;
+
+    // Bind tooltip on hover
+    layer.bindTooltip(tooltipContent, {
+        sticky: true,       // follows the cursor
+        direction: 'top',
+        offset: [0, -10],   // slight offset
+        opacity: 0.9
+    });
+
+    // Optional: click zoom still works
+    layer.on('click', function () {
+        map.fitBounds(layer.getBounds(), { maxZoom: 8 });
+    });
+}
+
+
+
+// Layers
+const bivariateLayer = new L.GeoJSON.AJAX("assets/Heatwaves_OldAge.geojson", { style: styleBivariate, onEachFeature: onEach });
+const heatwaveLayer = new L.GeoJSON.AJAX("assets/Heatwaves_OldAge.geojson", { style: styleHeatwave, onEachFeature: onEach });
+const ageLayer = new L.GeoJSON.AJAX("assets/Heatwaves_OldAge.geojson", { style: styleAge, onEachFeature: onEach });
+
+const overlays = {
+    "🔴 Bivariate: Heatwaves × Age": bivariateLayer,
+    "🔥 Univariate: Heatwave Days": heatwaveLayer,
+    "👵 Univariate: % Age 65+": ageLayer
+};
+L.control.layers(null, overlays, { collapsed: false }).addTo(map);
+bivariateLayer.addTo(map);
+
+// Legend
+const legend = L.control({position: 'bottomright'});
+legend.onAdd = function () {
+    const div = L.DomUtil.create('div', 'legend');
+    this._div = div;
+    this.update("bivariate");
+    return div;
+};
+legend.update = function(type) {
+    let html = "";
+    if (type === "bivariate") {
+        html += "<b>Bivariate Legend</b><br><small>Heatwave Days × % Age 65+</small>";
+        html += `<div style="text-align:center; font-size:11px; margin:6px 0 2px 0;">↑ Heatwave Days</div>`;
+        html += `
+            <div style="display: flex; align-items: center; justify-content: center;">
+                <div style="display: flex; flex-direction: column; justify-content: space-between; height: 60px; font-size: 11px; margin-right: 4px;">
+                    <div>High</div><div style="flex:1;"></div><div>Low</div>
+                </div>
+                <div class="bivariate-grid">
+                    <div style="background-color:#e31a1c;"></div><div style="background-color:#bd0026;"></div><div style="background-color:#800026;"></div>
+                    <div style="background-color:#feb24c;"></div><div style="background-color:#fd8d3c;"></div><div style="background-color:#fc4e2a;"></div>
+                    <div style="background-color:#ffffcc;"></div><div style="background-color:#ffeda0;"></div><div style="background-color:#fed976;"></div>
+                </div>
+            </div>
+            <div class="legend-labels-horizontal"><span>Low</span><span style="margin-left: 32px;">High</span></div>
+            <div style="text-align:center; font-size:11px;">% Population Age 65+</div>`;
+        } else if (type === "heat") {
+    html += "<b>Heatwave Days</b><br><small>Days with Events</small>";
+    html += `
+    <div style="display: flex; gap: 4px; margin-top: 5px; font-size: 11px;">
+      <div style="background:#fff5f0; width:20px; height:20px;" title="≤125"></div>
+      <div style="background:#fcbba1; width:20px; height:20px;" title="126–150"></div>
+      <div style="background:#fc9272; width:20px; height:20px;" title="151–175"></div>
+      <div style="background:#fb6a4a; width:20px; height:20px;" title="176–200"></div>
+      <div style="background:#ef3b2c; width:20px; height:20px;" title="201–250"></div>
+      <div style="background:#cb181d; width:20px; height:20px;" title="251–300"></div>
+      <div style="background:#99000d; width:20px; height:20px;" title=">300"></div>
+    </div>
+    <div style="display: flex; justify-content: space-between; width: 100%; font-size:11px;">
+      <span>≤125</span><span>>300</span>
+    </div>`;
+} else if (type === "age") {
+    html += "<b>% of Population Age 65+</b><br><small>Percentage</small>";
+    html += `
+    <div style="display: flex; gap: 4px; margin-top: 5px; font-size: 11px;">
+      <div style="background:#f7f4f0; width:20px; height:20px;" title="≤10%"></div>
+      <div style="background:#d9a679; width:20px; height:20px;" title="11–15%"></div>
+      <div style="background:#c97f46; width:20px; height:20px;" title="16–20%"></div>
+      <div style="background:#ab6329; width:20px; height:20px;" title="21–25%"></div>
+      <div style="background:#8c4c1a; width:20px; height:20px;" title="26–30%"></div>
+      <div style="background:#6e3c0a; width:20px; height:20px;" title="31–35%"></div>
+      <div style="background:#4b2900; width:20px; height:20px;" title=">35%"></div>
+    </div>
+    <div style="display: flex; justify-content: space-between; width: 100%; font-size:11px;">
+      <span>≤10%</span><span>>35%</span>
+    </div>`;
+    }
+    this._div.innerHTML = html;
+};
+legend.addTo(map);
+
+map.on("overlayadd", function(e) {
+    if (e.name.includes("Bivariate")) legend.update("bivariate");
+    else if (e.name.includes("Heatwave")) legend.update("heat");
+    else if (e.name.includes("Age")) legend.update("age");
+});
+
+// State Zoom + Highlight
+let highlightLayer = null;
+const stateBounds = {
+    'AL': [[30.2,-88.5],[35.0,-84.8]], 'AZ': [[31.3,-114.8],[37.0,-109.0]], 'AR': [[33.0,-94.6],[36.5,-89.6]],
+    'CA': [[32.5,-124.4],[42.0,-114.1]], 'CO': [[36.9,-109.0],[41.0,-102.0]], 'CT': [[40.9,-73.7],[42.1,-71.8]],
+    'DE': [[38.4,-75.8],[39.8,-75.0]], 'FL': [[24.4,-87.6],[31.0,-80.0]], 'GA': [[30.4,-85.6],[35.0,-80.8]],
+    'ID': [[42.0,-117.2],[49.0,-111.0]], 'IL': [[36.9,-91.5],[42.5,-87.5]], 'IN': [[37.8,-88.1],[41.8,-84.8]],
+    'IA': [[40.4,-96.6],[43.5,-90.1]], 'KS': [[36.9,-102.0],[40.0,-94.6]], 'KY': [[36.5,-89.6],[39.1,-81.9]],
+    'LA': [[28.9,-94.0],[33.0,-88.8]], 'ME': [[43.0,-71.1],[47.5,-66.9]], 'MD': [[37.9,-79.5],[39.7,-75.0]],
+    'MA': [[41.2,-73.5],[42.9,-69.9]], 'MI': [[41.7,-90.4],[48.3,-82.4]], 'MN': [[43.5,-97.2],[49.4,-89.5]],
+    'MS': [[30.2,-91.6],[35.0,-88.1]], 'MO': [[36.0,-95.8],[40.6,-89.1]], 'MT': [[44.4,-116.0],[49.0,-104.0]],
+    'NE': [[39.9,-104.1],[43.0,-95.3]], 'NV': [[35.0,-120.0],[42.0,-114.0]], 'NH': [[42.7,-72.6],[45.3,-70.6]],
+    'NJ': [[38.9,-75.6],[41.4,-73.9]], 'NM': [[31.3,-109.0],[37.0,-103.0]], 'NY': [[40.5,-79.8],[45.0,-71.8]],
+    'NC': [[33.8,-84.3],[36.6,-75.4]], 'ND': [[45.5,-105.0],[49.5,-96.0]], 'OH': [[38.4,-84.8],[41.9,-80.5]],
+    'OK': [[33.6,-103.0],[37.0,-94.4]], 'OR': [[41.9,-124.6],[46.3,-116.5]], 'PA': [[39.7,-80.5],[42.3,-74.7]],
+    'RI': [[41.1,-71.9],[42.0,-71.1]], 'SC': [[32.0,-83.4],[35.2,-78.5]], 'SD': [[42.0,-105.0],[46.0,-96.0]],
+    'TN': [[34.9,-90.3],[36.7,-81.6]], 'TX': [[25.8,-106.6],[36.5,-93.5]], 'UT': [[36.9,-114.0],[42.0,-109.0]],
+    'VT': [[42.7,-73.4],[45.0,-71.5]], 'VA': [[36.5,-83.7],[39.5,-75.2]], 'WA': [[45.5,-124.8],[49.0,-116.9]],
+    'WV': [[37.2,-82.6],[40.6,-77.7]], 'WI': [[42.5,-92.9],[47.3,-86.2]], 'WY': [[41.0,-111.1],[45.0,-104.0]]
+};
+
+document.getElementById('state-select').addEventListener('change', function () {
+    const selected = this.value;
+    if (highlightLayer) map.removeLayer(highlightLayer);
+    if (selected && stateBounds[selected]) {
+        map.fitBounds(stateBounds[selected]);
+        fetch("assets/Heatwaves_OldAge.geojson")
+  .then(res => res.json())
+  .then(data => {
+    const filtered = {
+      type: "FeatureCollection",
+      features: data.features.filter(f => f.properties.state_abbr === selected)
+    };
+
+    highlightLayer = L.geoJSON(filtered, {
+      style: feature => ({
+        ...styleBivariate(feature),        // keep original fill color
+        weight: 2,                         // thicker outline
+        color: "#000",                     // black outline
+        dashArray: "3"                     // dashed border
+      }),
+      onEachFeature: onEach                // keep click + hover behavior
+    }).addTo(map);
+  });
+    }
+});
+
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+  attribution: '&copy; <a href="https://www.esri.com/">Esri</a> | ' +
+               'Heatwave data: <a href="https://www.ncei.noaa.gov/products/land-based-station/nclimgrid-daily" target="_blank">NOAA nClimGrid</a> | ' +
+               'Age 65+ data: <a href="https://data.census.gov/table?q=S0101&tid=ACSST5Y2021.S0101" target="_blank">U.S. Census Bureau (ACS 2021)</a> | ' +
+               'Map by Caleb Blackburn'
+}).addTo(map);
+
+
+L.control.scale({
+    position: 'bottomleft', // You can also use 'topleft', 'topright', 'bottomright'
+    imperial: false,         // Set to false to hide miles
+    metric: true             // Show kilometers
+}).addTo(map);
+
+</script>
+</body>
+</html>
